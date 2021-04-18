@@ -1,0 +1,22 @@
+{
+  "name": "FFKit",
+  "version": "0.1.0",
+  "summary": "A short description of FFKit.",
+  "description": "TODO: Add long description of the pod here.",
+  "homepage": "https://github.com/Pancf/FFKit",
+  "license": {
+    "type": "MIT",
+    "file": "LICENSE"
+  },
+  "authors": {
+    "Pancf": "panchenfeng@stu.xmu.edu.cn"
+  },
+  "source": {
+    "git": "https://github.com/Pancf/FFKit.git",
+    "tag": "0.1.0"
+  },
+  "platforms": {
+    "ios": "9.0"
+  },
+  "source_files": "FFKit/Classes/**/*"
+}

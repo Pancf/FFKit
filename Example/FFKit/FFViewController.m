@@ -7,6 +7,7 @@
 //
 
 #import "FFViewController.h"
+#import <FFKit/FFLinearGradientView.h>
 
 @interface FFViewController ()
 
@@ -17,13 +18,9 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-	// Do any additional setup after loading the view, typically from a nib.
-}
-
-- (void)didReceiveMemoryWarning
-{
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
+    FFLinearGradientView *view = [[FFLinearGradientView alloc] initWithStartPoint:CGPointMake(0, 0) endPoint:CGPointMake(1, 1) locations:@[@0, @0.6, @1] colors:@[UIColor.whiteColor, UIColor.greenColor, UIColor.redColor]];
+    view.frame = CGRectMake(0, 0, 200, 200);
+    [self.view addSubview:view];
 }
 
 @end
