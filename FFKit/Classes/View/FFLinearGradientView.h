@@ -13,7 +13,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, assign, readonly) CGPoint startPoint;
 @property (nonatomic, assign, readonly) CGPoint endPoint;
-@property (nonatomic, copy,   readonly) NSArray<UIColor * >* colors;
+@property (nonatomic, copy,   readonly) NSArray<NSNumber *> *locations;
+@property (nonatomic, copy,   readonly) NSArray<UIColor * > *colors;
 
 - (instancetype)initWithStartPoint:(CGPoint)startPoint
                           endPoint:(CGPoint)endPoint

@@ -22,7 +22,7 @@ pod 'FFKit'
 
 ## Author
 
-panchenfeng@stu.xmu.edu.cn, panchenfeng@stu.xmu.edu.cn
+Chenfeng Pan
 
 ## License
 

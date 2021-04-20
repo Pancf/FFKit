@@ -18,6 +18,10 @@
 		D7184935F41587631296CF8F5DC7603B /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 73010CC983E3809BECEE5348DA1BB8C6 /* Foundation.framework */; };
 		DB60B4F1EF61020BFECD5E66F7CE36E7 /* FFKit-umbrella.h in Headers */ = {isa = PBXBuildFile; fileRef = ED89A1AE34DC96BE21AB87C93E71F2E2 /* FFKit-umbrella.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		E34CC82C55A641F8CA2481A482AF96E7 /* Pods-FFKit_Tests-umbrella.h in Headers */ = {isa = PBXBuildFile; fileRef = 99FA121C8B7730777CE36A36F4C51F5B /* Pods-FFKit_Tests-umbrella.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E7E77440262E5E360021DFEE /* FFWaterfullCollectionViewLayout.h in Headers */ = {isa = PBXBuildFile; fileRef = E7E7743E262E5E360021DFEE /* FFWaterfullCollectionViewLayout.h */; };
+		E7E77441262E5E360021DFEE /* FFWaterfullCollectionViewLayout.m in Sources */ = {isa = PBXBuildFile; fileRef = E7E7743F262E5E360021DFEE /* FFWaterfullCollectionViewLayout.m */; };
+		E7E77454262E69BF0021DFEE /* FFCollectionViewDecarationLayoutAttributes.h in Headers */ = {isa = PBXBuildFile; fileRef = E7E77452262E69BF0021DFEE /* FFCollectionViewDecarationLayoutAttributes.h */; };
+		E7E77455262E69BF0021DFEE /* FFCollectionViewDecarationLayoutAttributes.m in Sources */ = {isa = PBXBuildFile; fileRef = E7E77453262E69BF0021DFEE /* FFCollectionViewDecarationLayoutAttributes.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -68,6 +72,10 @@
 		CD1824BCB0A89FD7DA8BE31200C3323C /* Pods-FFKit_Example-dummy.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = "Pods-FFKit_Example-dummy.m"; sourceTree = "<group>"; };
 		D20DC58DA409D28511130BC0A40188FE /* Pods-FFKit_Example-umbrella.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "Pods-FFKit_Example-umbrella.h"; sourceTree = "<group>"; };
 		D6357BF19188267719F0B6BB1CE40FB1 /* Pods-FFKit_Example.modulemap */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.module; path = "Pods-FFKit_Example.modulemap"; sourceTree = "<group>"; };
+		E7E7743E262E5E360021DFEE /* FFWaterfullCollectionViewLayout.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FFWaterfullCollectionViewLayout.h; sourceTree = "<group>"; };
+		E7E7743F262E5E360021DFEE /* FFWaterfullCollectionViewLayout.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FFWaterfullCollectionViewLayout.m; sourceTree = "<group>"; };
+		E7E77452262E69BF0021DFEE /* FFCollectionViewDecarationLayoutAttributes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FFCollectionViewDecarationLayoutAttributes.h; sourceTree = "<group>"; };
+		E7E77453262E69BF0021DFEE /* FFCollectionViewDecarationLayoutAttributes.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FFCollectionViewDecarationLayoutAttributes.m; sourceTree = "<group>"; };
 		ED89A1AE34DC96BE21AB87C93E71F2E2 /* FFKit-umbrella.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "FFKit-umbrella.h"; sourceTree = "<group>"; };
 		F1E7DB2D7A778DCD855FE0909ED4A4F9 /* Pods-FFKit_Tests-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "Pods-FFKit_Tests-Info.plist"; sourceTree = "<group>"; };
 		F459A28FB15D9E3EF2D78195BDE825BA /* FFKit-prefix.pch */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "FFKit-prefix.pch"; sourceTree = "<group>"; };
@@ -228,11 +236,23 @@
 		E7E77436262C0BE10021DFEE /* View */ = {
 			isa = PBXGroup;
 			children = (
+				E7E7743D262E5CFB0021DFEE /* Layout */,
 				42E69875539A2905D09B43CD823217EB /* FFLinearGradientView.h */,
 				63EF74210F5C14536E576E282F947B23 /* FFLinearGradientView.m */,
 			);
 			name = View;
 			path = FFKit/Classes/View;
+			sourceTree = "<group>";
+		};
+		E7E7743D262E5CFB0021DFEE /* Layout */ = {
+			isa = PBXGroup;
+			children = (
+				E7E7743E262E5E360021DFEE /* FFWaterfullCollectionViewLayout.h */,
+				E7E7743F262E5E360021DFEE /* FFWaterfullCollectionViewLayout.m */,
+				E7E77452262E69BF0021DFEE /* FFCollectionViewDecarationLayoutAttributes.h */,
+				E7E77453262E69BF0021DFEE /* FFCollectionViewDecarationLayoutAttributes.m */,
+			);
+			path = Layout;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -242,8 +262,10 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E7E77454262E69BF0021DFEE /* FFCollectionViewDecarationLayoutAttributes.h in Headers */,
 				DB60B4F1EF61020BFECD5E66F7CE36E7 /* FFKit-umbrella.h in Headers */,
 				8F587C4D134D8108F92B4E074D2147A3 /* FFLinearGradientView.h in Headers */,
+				E7E77440262E5E360021DFEE /* FFWaterfullCollectionViewLayout.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -397,7 +419,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				1FD93F60461FEC993BF013574EC8AABA /* FFKit-dummy.m in Sources */,
+				E7E77455262E69BF0021DFEE /* FFCollectionViewDecarationLayoutAttributes.m in Sources */,
 				750848F17B252A0241C3A7AA766D02C6 /* FFLinearGradientView.m in Sources */,
+				E7E77441262E5E360021DFEE /* FFWaterfullCollectionViewLayout.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
