@@ -11,16 +11,16 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FFWaterfallCollectionViewLayout;
 
-typedef NS_ENUM(NSInteger, FFCollectionViewDecarationType) {
-    FFCollectionViewDecarationTypeNone = 0,
-    FFCollectionViewDecarationTypeSolidColor,
-    FFCollectionViewDecarationTypeGradient,
-    FFCollectionViewDecarationTypeImage
+typedef NS_ENUM(NSInteger, FFCollectionViewDecorationType) {
+    FFCollectionViewDecorationTypeNone = 0,
+    FFCollectionViewDecorationTypeSolidColor,
+    FFCollectionViewDecorationTypeGradient,
+    FFCollectionViewDecorationTypeImage
 };
 
-@interface FFCollectionViewDecarationLayoutAttributes : UICollectionViewLayoutAttributes
+@interface FFCollectionViewDecorationLayoutAttributes : UICollectionViewLayoutAttributes
 
-@property (nonatomic, assign) FFCollectionViewDecarationType type;
+@property (nonatomic, assign) FFCollectionViewDecorationType type;
 // For solidColor
 @property (nonatomic, strong, nullable) UIColor *backgroundColor;
 // For gradient
@@ -39,6 +39,8 @@ typedef NS_ENUM(NSInteger, FFCollectionViewDecarationType) {
 @required
 - (NSInteger)collectionView:(UICollectionView *)collectionView layout:(FFWaterfallCollectionViewLayout *)layout numberOfColsInSection:(NSInteger)section;
 
+- (CGFloat)collectionView:(UICollectionView *)collectionView layout:(FFWaterfallCollectionViewLayout *)layout itemHeightAtIndexPath:(NSIndexPath *)indexPath;
+
 @optional
 - (UIEdgeInsets)collectionView:(UICollectionView *)collectionView layout:(FFWaterfallCollectionViewLayout *)layout insetsInSection:(NSInteger)section;
 
@@ -46,17 +48,15 @@ typedef NS_ENUM(NSInteger, FFCollectionViewDecarationType) {
 
 - (UIEdgeInsets)collectionView:(UICollectionView *)collectionView layout:(FFWaterfallCollectionViewLayout *)layout footerInsetsInSection:(NSInteger)section;
 
-- (CGSize)collectionView:(UICollectionView *)collectionView layout:(FFWaterfallCollectionViewLayout *)layout headerSizeInSection:(NSInteger)section;
+- (CGFloat)collectionView:(UICollectionView *)collectionView layout:(FFWaterfallCollectionViewLayout *)layout headerHeightInSection:(NSInteger)section;
 
-- (CGFloat)collectionView:(UICollectionView *)collectionView layout:(FFWaterfallCollectionViewLayout *)layout itemHeightAtIndexPath:(NSIndexPath *)indexPath;
-
-- (CGSize)collectionView:(UICollectionView *)collectionView layout:(FFWaterfallCollectionViewLayout *)layout footerSizeInSection:(NSInteger)section;
+- (CGFloat)collectionView:(UICollectionView *)collectionView layout:(FFWaterfallCollectionViewLayout *)layout footerHeightInSection:(NSInteger)section;
 
 - (CGFloat)collectionView:(UICollectionView *)collectionView layout:(FFWaterfallCollectionViewLayout *)layout minimumLineSpacingInSection:(NSInteger)section;
 
 - (CGFloat)collectionView:(UICollectionView *)collectionView layout:(FFWaterfallCollectionViewLayout *)layout minimumInteritemSpacingInSection:(NSInteger)section;
 
-- (FFCollectionViewDecarationLayoutAttributes *)collectionView:(UICollectionView *)collectionView layout:(FFWaterfallCollectionViewLayout *)layout decorationAttributesInSection:(NSInteger)section;
+- (FFCollectionViewDecorationLayoutAttributes *)collectionView:(UICollectionView *)collectionView layout:(FFWaterfallCollectionViewLayout *)layout decorationAttributesInSection:(NSInteger)section;
 
 @end
 

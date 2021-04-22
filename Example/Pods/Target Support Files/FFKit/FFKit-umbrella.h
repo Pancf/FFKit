@@ -11,6 +11,7 @@
 #endif
 
 #import "FFLinearGradientView.h"
+#import "FFWaterfallCollectionViewLayout.h"
 
 FOUNDATION_EXPORT double FFKitVersionNumber;
 FOUNDATION_EXPORT const unsigned char FFKitVersionString[];

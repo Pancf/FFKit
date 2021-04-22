@@ -7,19 +7,54 @@
 //
 
 #import "FFViewController.h"
-#import <FFKit/FFLinearGradientView.h>
+#import <FFKit/FFWaterfallCollectionViewLayout.h>
 
-@interface FFViewController ()
+@interface FFViewController () <FFWaterfallCollectionViewLayoutDelegate, UICollectionViewDataSource>
 
 @end
 
 @implementation FFViewController
 
+- (NSInteger)collectionView:(UICollectionView *)collectionView layout:(FFWaterfallCollectionViewLayout *)layout numberOfColsInSection:(NSInteger)section
+{
+    return section + 2;
+}
+
+- (CGFloat)collectionView:(UICollectionView *)collectionView layout:(FFWaterfallCollectionViewLayout *)layout itemHeightAtIndexPath:(NSIndexPath *)indexPath
+{
+    return (indexPath.item % 5) * 10 + 40;
+}
+
+- (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView
+{
+    return 3;
+}
+
+- (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section
+{
+    return section * 5 + 20;
+}
+
+- (__kindof UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath
+{
+    __auto_type cell = [collectionView dequeueReusableCellWithReuseIdentifier:NSStringFromClass(UICollectionViewCell.class) forIndexPath:indexPath];
+    UILabel *label = [UILabel new];
+    label.text = [NSString stringWithFormat:@"%ld", (long)indexPath.item];
+    [cell.contentView addSubview:label];
+    cell.contentView.backgroundColor = UIColor.greenColor;
+    label.frame = CGRectMake(0, 0, 40, 40);
+    return cell;
+}
+
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    FFLinearGradientView *view = [[FFLinearGradientView alloc] initWithStartPoint:CGPointMake(0, 0) endPoint:CGPointMake(1, 1) locations:@[@0, @0.6, @1] colors:@[UIColor.whiteColor, UIColor.greenColor, UIColor.redColor]];
-    view.frame = CGRectMake(0, 0, 200, 200);
+    FFWaterfallCollectionViewLayout *layout = [FFWaterfallCollectionViewLayout new];
+    layout.delegate = self;
+    UICollectionView *view = [[UICollectionView alloc] initWithFrame:UIScreen.mainScreen.bounds
+                                                collectionViewLayout:layout];
+    [view registerClass:UICollectionViewCell.class forCellWithReuseIdentifier:NSStringFromClass(UICollectionViewCell.class)];
+    view.dataSource = self;
     [self.view addSubview:view];
 }
 
