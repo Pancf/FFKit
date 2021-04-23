@@ -7,55 +7,31 @@
 //
 
 #import "FFViewController.h"
-#import <FFKit/FFWaterfallCollectionViewLayout.h>
+#import "FFCollectionViewTestViewController.h"
 
-@interface FFViewController () <FFWaterfallCollectionViewLayoutDelegate, UICollectionViewDataSource>
+@interface FFViewController ()
 
 @end
 
 @implementation FFViewController
 
-- (NSInteger)collectionView:(UICollectionView *)collectionView layout:(FFWaterfallCollectionViewLayout *)layout numberOfColsInSection:(NSInteger)section
-{
-    return section + 2;
-}
-
-- (CGFloat)collectionView:(UICollectionView *)collectionView layout:(FFWaterfallCollectionViewLayout *)layout itemHeightAtIndexPath:(NSIndexPath *)indexPath
-{
-    return (indexPath.item % 5) * 10 + 40;
-}
-
-- (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView
-{
-    return 3;
-}
-
-- (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section
-{
-    return section * 5 + 20;
-}
-
-- (__kindof UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath
-{
-    __auto_type cell = [collectionView dequeueReusableCellWithReuseIdentifier:NSStringFromClass(UICollectionViewCell.class) forIndexPath:indexPath];
-    UILabel *label = [UILabel new];
-    label.text = [NSString stringWithFormat:@"%ld", (long)indexPath.item];
-    [cell.contentView addSubview:label];
-    cell.contentView.backgroundColor = UIColor.greenColor;
-    label.frame = CGRectMake(0, 0, 40, 40);
-    return cell;
-}
-
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    FFWaterfallCollectionViewLayout *layout = [FFWaterfallCollectionViewLayout new];
-    layout.delegate = self;
-    UICollectionView *view = [[UICollectionView alloc] initWithFrame:UIScreen.mainScreen.bounds
-                                                collectionViewLayout:layout];
-    [view registerClass:UICollectionViewCell.class forCellWithReuseIdentifier:NSStringFromClass(UICollectionViewCell.class)];
-    view.dataSource = self;
-    [self.view addSubview:view];
+    UIButton *btn = [[UIButton alloc] init];
+    [btn setTitle:@"Waterfall CollectionView" forState:UIControlStateNormal];
+    [btn setTitleColor:UIColor.blackColor forState:UIControlStateNormal];
+    [btn addTarget:self action:@selector(testWaterfallCollectionView) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:btn];
+    btn.translatesAutoresizingMaskIntoConstraints = NO;
+    [btn.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor].active = YES;
+    [btn.centerYAnchor constraintEqualToAnchor:self.view.centerYAnchor].active = YES;
+}
+
+- (void)testWaterfallCollectionView
+{
+    FFCollectionViewTestViewController *vc = [FFCollectionViewTestViewController new];
+    [self.navigationController pushViewController:vc animated:YES];
 }
 
 @end

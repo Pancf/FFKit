@@ -12,13 +12,13 @@ NS_ASSUME_NONNULL_BEGIN
 @class FFWaterfallCollectionViewLayout;
 
 typedef NS_ENUM(NSInteger, FFCollectionViewDecorationType) {
-    FFCollectionViewDecorationTypeNone = 0,
+    FFCollectionViewDecorationTypeNone = 0, // clear background
     FFCollectionViewDecorationTypeSolidColor,
     FFCollectionViewDecorationTypeGradient,
     FFCollectionViewDecorationTypeImage
 };
 
-@interface FFCollectionViewDecorationLayoutAttributes : UICollectionViewLayoutAttributes
+@interface FFCollectionViewDecorationConfig : NSObject
 
 @property (nonatomic, assign) FFCollectionViewDecorationType type;
 // For solidColor
@@ -56,7 +56,7 @@ typedef NS_ENUM(NSInteger, FFCollectionViewDecorationType) {
 
 - (CGFloat)collectionView:(UICollectionView *)collectionView layout:(FFWaterfallCollectionViewLayout *)layout minimumInteritemSpacingInSection:(NSInteger)section;
 
-- (FFCollectionViewDecorationLayoutAttributes *)collectionView:(UICollectionView *)collectionView layout:(FFWaterfallCollectionViewLayout *)layout decorationAttributesInSection:(NSInteger)section;
+- (FFCollectionViewDecorationConfig *)collectionView:(UICollectionView *)collectionView layout:(FFWaterfallCollectionViewLayout *)layout decorationConfigInSection:(NSInteger)section;
 
 @end
 

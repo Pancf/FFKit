@@ -9,6 +9,35 @@
 
 static NSString * const kFFCollectionViewDecorationViewElementKind = @"kFFCollectionViewDecorationViewElementKind";
 
+@interface _FFCollectionViewDecorationLayoutAttributes : UICollectionViewLayoutAttributes
+
+@property (nonatomic, assign) FFCollectionViewDecorationType type;
+@property (nonatomic, strong, nullable) UIColor *backgroundColor;
+@property (nonatomic, assign) CGPoint startPoint;
+@property (nonatomic, assign) CGPoint endPoint;
+@property (nonatomic, copy, nullable) NSArray<UIColor *> *colors;
+@property (nonatomic, copy, nullable) NSArray<NSNumber *> *locations;
+@property (nonatomic, strong) UIImage *backgroundImage;
+
+- (void)mergeFromConfig:(FFCollectionViewDecorationConfig *)config;
+
+@end
+
+@implementation _FFCollectionViewDecorationLayoutAttributes
+
+- (void)mergeFromConfig:(FFCollectionViewDecorationConfig *)config
+{
+    _type = config.type;
+    _backgroundColor = config.backgroundColor;
+    _startPoint = config.startPoint;
+    _endPoint = config.endPoint;
+    _colors = [config.colors copy];
+    _locations = [config.locations copy];
+    _backgroundImage = config.backgroundImage;
+}
+
+@end
+
 @interface _FFCollectionViewDecorationView : UICollectionReusableView
 @end
 
@@ -16,10 +45,10 @@ static NSString * const kFFCollectionViewDecorationViewElementKind = @"kFFCollec
 
 - (void)applyLayoutAttributes:(UICollectionViewLayoutAttributes *)layoutAttributes
 {
-    if (![layoutAttributes isKindOfClass:FFCollectionViewDecorationLayoutAttributes.class]) {
+    if (![layoutAttributes isKindOfClass:_FFCollectionViewDecorationLayoutAttributes.class]) {
         return;
     }
-    __auto_type attr = (FFCollectionViewDecorationLayoutAttributes *)layoutAttributes;
+    __auto_type attr = (_FFCollectionViewDecorationLayoutAttributes *)layoutAttributes;
     switch (attr.type) {
         case FFCollectionViewDecorationTypeNone:
             self.backgroundColor = UIColor.clearColor;
@@ -51,7 +80,7 @@ static NSString * const kFFCollectionViewDecorationViewElementKind = @"kFFCollec
 
 @end
 
-@implementation FFCollectionViewDecorationLayoutAttributes
+@implementation FFCollectionViewDecorationConfig
 @end
 
 @implementation FFWaterfallCollectionViewLayout
@@ -60,7 +89,7 @@ static NSString * const kFFCollectionViewDecorationViewElementKind = @"kFFCollec
     NSMutableArray<NSMutableArray<UICollectionViewLayoutAttributes *> *> *_itemsLayoutAttributes;
     NSMutableDictionary<NSNumber *, UICollectionViewLayoutAttributes *> *_footersLayoutAttributes;
     NSMutableArray<UICollectionViewLayoutAttributes *> *_allLayoutAttributes;
-    NSMutableArray<UICollectionViewLayoutAttributes *> *_decorationLayoutAttribtues;
+    NSMutableArray<_FFCollectionViewDecorationLayoutAttributes *> *_decorationLayoutAttribtues;
     NSMutableArray<NSMutableArray<NSNumber *> *> *_heightsForCols;
 }
 
@@ -163,7 +192,11 @@ static NSString * const kFFCollectionViewDecorationViewElementKind = @"kFFCollec
     if (section >= _decorationLayoutAttribtues.count) {
         return nil;
     }
-    return _decorationLayoutAttribtues[section];
+    if ([elementKind isEqualToString:kFFCollectionViewDecorationViewElementKind]) {
+        return _decorationLayoutAttribtues[section];
+    } else {
+        return nil;
+    }
 }
 
 - (BOOL)shouldInvalidateLayoutForBoundsChange:(CGRect)newBounds
@@ -211,34 +244,37 @@ static NSString * const kFFCollectionViewDecorationViewElementKind = @"kFFCollec
 
 - (void)_layoutHeaderFrom:(CGFloat *)y inSection:(NSInteger)section
 {
-    if (![self.delegate respondsToSelector:@selector(collectionView:layout:headerHeightInSection:)]) {
-        return;
-    }
     UICollectionView *collectionView = self.collectionView;
-    UICollectionViewLayoutAttributes *attr = [UICollectionViewLayoutAttributes layoutAttributesForSupplementaryViewOfKind:UICollectionElementKindSectionHeader withIndexPath:[NSIndexPath indexPathForItem:0 inSection:section]];
-    CGFloat width = collectionView.bounds.size.width;
-    CGFloat headerHeight = 0;
-    headerHeight = [self.delegate collectionView:collectionView layout:self headerHeightInSection:section];
     UIEdgeInsets headerInsets = UIEdgeInsetsZero;
     if ([self.delegate respondsToSelector:@selector(collectionView:layout:headerInsetsInSection:)]) {
         headerInsets = [self.delegate collectionView:collectionView layout:self headerInsetsInSection:section];
     }
+    *y += (headerInsets.top);
+    
+    CGFloat width = collectionView.bounds.size.width;
+    CGFloat headerHeight = 0;
+    if ([self.delegate respondsToSelector:@selector(collectionView:layout:headerHeightInSection:)]) {
+        headerHeight = [self.delegate collectionView:collectionView layout:self headerHeightInSection:section];
+        if (headerHeight > DBL_EPSILON) {
+            UICollectionViewLayoutAttributes *attr = [UICollectionViewLayoutAttributes layoutAttributesForSupplementaryViewOfKind:UICollectionElementKindSectionHeader withIndexPath:[NSIndexPath indexPathForItem:0 inSection:section]];
+            attr.frame = CGRectMake(headerInsets.left,
+                                    *y,
+                                    width - headerInsets.left - headerInsets.right,
+                                    headerHeight);
+            _headersLayoutAttributes[@(section)] = attr;
+            [_allLayoutAttributes addObject:attr];
+        }
+    }
+    
     UIEdgeInsets sectionInsets = UIEdgeInsetsZero;
     if ([self.delegate respondsToSelector:@selector(collectionView:layout:insetForSectionAtIndex:)]) {
         sectionInsets = [self.delegate collectionView:collectionView layout:self insetsInSection:section];
     }
-    *y += (sectionInsets.top + headerInsets.top);
-    attr.frame = CGRectMake(sectionInsets.left + headerInsets.left,
-                            *y,
-                            width - sectionInsets.left - sectionInsets.right - headerInsets.left - headerInsets.right,
-                            headerHeight);
-    *y += headerHeight;
+    *y += (headerHeight + headerInsets.bottom + sectionInsets.top);
     __auto_type heightsInSection = _heightsForCols[section];
     for (int i = 0; i < heightsInSection.count; ++i) {
         heightsInSection[i] = @(*y);
     }
-    _headersLayoutAttributes[@(section)] = attr;
-    [_allLayoutAttributes addObject:attr];
 }
 
 - (void)_layoutItemsFrom:(CGFloat *)y inSection:(NSInteger)section
@@ -258,18 +294,15 @@ static NSString * const kFFCollectionViewDecorationViewElementKind = @"kFFCollec
         minimumInteritemSpacing = [self.delegate collectionView:collectionView layout:self minimumInteritemSpacingInSection:section];
     }
     
-    NSInteger numberOfItems = [collectionView numberOfItemsInSection:section];
     NSInteger numberOfCols = [self.delegate collectionView:collectionView layout:self numberOfColsInSection:section];
     CGFloat width = collectionView.bounds.size.width;
     CGFloat itemWidth = (width - sectionInsets.left - sectionInsets.right - (numberOfCols - 1) * minimumInteritemSpacing) / numberOfCols;
     CGFloat padding = itemWidth + minimumInteritemSpacing;
     
+    NSInteger numberOfItems = [collectionView numberOfItemsInSection:section];
     NSMutableArray<UICollectionViewLayoutAttributes *> *itemAttributes = [NSMutableArray arrayWithCapacity:numberOfItems];
-    __auto_type heightsInSection = _heightsForCols[section];
-    for (int i = 0; i < heightsInSection.count; ++i) {
-        heightsInSection[i] = @(*y);
-    }
     
+    __auto_type heightsInSection = _heightsForCols[section];
     for (int i = 0; i < numberOfItems; ++i) {
         NSIndexPath *indexPath = [NSIndexPath indexPathForItem:i inSection:section];
         UICollectionViewLayoutAttributes *attr = [UICollectionViewLayoutAttributes layoutAttributesForCellWithIndexPath:indexPath];
@@ -279,12 +312,15 @@ static NSString * const kFFCollectionViewDecorationViewElementKind = @"kFFCollec
                                 heightsInSection[col].doubleValue,
                                 itemWidth,
                                 itemHeight);
-        heightsInSection[col] = @(heightsInSection[col].doubleValue + itemHeight + minimumLineSpacing);
+        heightsInSection[col] = @(CGRectGetMaxY(attr.frame) + minimumLineSpacing);
         [itemAttributes addObject:attr];
         [_allLayoutAttributes addObject:attr];
     }
     [_itemsLayoutAttributes addObject:itemAttributes];
     
+    for (int i = 0; i < heightsInSection.count; ++i) {
+        heightsInSection[i] = @(heightsInSection[i].doubleValue - minimumLineSpacing);
+    }
     __block CGFloat maxHeight = CGFLOAT_MIN;
     [heightsInSection enumerateObjectsUsingBlock:^(NSNumber * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
         if (obj.doubleValue > maxHeight) {
@@ -296,14 +332,8 @@ static NSString * const kFFCollectionViewDecorationViewElementKind = @"kFFCollec
 
 - (void)_layoutFooterFrom:(CGFloat *)y inSection:(NSInteger)section
 {
-    if (![self.delegate respondsToSelector:@selector(collectionView:layout:footerHeightInSection:)]) {
-        return;
-    }
     UICollectionView *collectionView = self.collectionView;
-    UICollectionViewLayoutAttributes *attr = [UICollectionViewLayoutAttributes layoutAttributesForSupplementaryViewOfKind:UICollectionElementKindSectionFooter withIndexPath:[NSIndexPath indexPathForItem:0 inSection:section]];
     CGFloat width = collectionView.bounds.size.width;
-    CGFloat footerHeight = 0;
-    footerHeight = [self.delegate collectionView:collectionView layout:self footerHeightInSection:section];
     UIEdgeInsets footerInsets = UIEdgeInsetsZero;
     if ([self.delegate respondsToSelector:@selector(collectionView:layout:footerInsetsInSection:)]) {
         footerInsets = [self.delegate collectionView:collectionView layout:self footerInsetsInSection:section];
@@ -312,26 +342,37 @@ static NSString * const kFFCollectionViewDecorationViewElementKind = @"kFFCollec
     if ([self.delegate respondsToSelector:@selector(collectionView:layout:insetForSectionAtIndex:)]) {
         sectionInsets = [self.delegate collectionView:collectionView layout:self insetsInSection:section];
     }
-    attr.frame = CGRectMake(sectionInsets.left + footerInsets.left,
-                            *y,
-                            width - sectionInsets.left - sectionInsets.right - footerInsets.left - footerInsets.right,
-                            footerHeight);
-    *y += (footerHeight + sectionInsets.bottom + footerInsets.bottom);
+    *y += (footerInsets.top + sectionInsets.bottom);
+    
+    CGFloat footerHeight = 0;
+    if ([self.delegate respondsToSelector:@selector(collectionView:layout:footerHeightInSection:)]) {
+        footerHeight = [self.delegate collectionView:collectionView layout:self footerHeightInSection:section];
+        if (footerHeight > DBL_EPSILON) {
+            UICollectionViewLayoutAttributes *attr = [UICollectionViewLayoutAttributes layoutAttributesForSupplementaryViewOfKind:UICollectionElementKindSectionFooter withIndexPath:[NSIndexPath indexPathForItem:0 inSection:section]];
+            attr.frame = CGRectMake(footerInsets.left,
+                                    *y,
+                                    width - footerInsets.left - footerInsets.right,
+                                    footerHeight);
+            _footersLayoutAttributes[@(section)] = attr;;
+            [_allLayoutAttributes addObject:attr];
+        }
+    }
+    
+    *y += (footerHeight + footerInsets.bottom);
     __auto_type heightsInSection = _heightsForCols[section];
     for (int i = 0; i < heightsInSection.count; ++i) {
         heightsInSection[i] = @(*y);
     }
-    _footersLayoutAttributes[@(section)] = attr;;
-    [_allLayoutAttributes addObject:attr];
 }
 
 - (void)_layoutDecorationInSection:(NSInteger)section
 {
     UICollectionView *collectionView = self.collectionView;
-    FFCollectionViewDecorationLayoutAttributes *attr = [FFCollectionViewDecorationLayoutAttributes layoutAttributesForDecorationViewOfKind:kFFCollectionViewDecorationViewElementKind withIndexPath:[NSIndexPath indexPathForItem:0 inSection:section]];
+    _FFCollectionViewDecorationLayoutAttributes *attr = [_FFCollectionViewDecorationLayoutAttributes layoutAttributesForDecorationViewOfKind:kFFCollectionViewDecorationViewElementKind withIndexPath:[NSIndexPath indexPathForItem:0 inSection:section]];
     attr.type = FFCollectionViewDecorationTypeNone;
-    if ([self.delegate respondsToSelector:@selector(collectionView:layout:decorationAttributesInSection:)]) {
-        attr = [self.delegate collectionView:collectionView layout:self decorationAttributesInSection:section];
+    if ([self.delegate respondsToSelector:@selector(collectionView:layout:decorationConfigInSection:)]) {
+        FFCollectionViewDecorationConfig *config = [self.delegate collectionView:collectionView layout:self decorationConfigInSection:section];
+        [attr mergeFromConfig:config];
     }
     
     UIEdgeInsets sectionInsets = UIEdgeInsetsZero;
@@ -341,11 +382,13 @@ static NSString * const kFFCollectionViewDecorationViewElementKind = @"kFFCollec
 
     __auto_type itemAttributesInSection = _itemsLayoutAttributes[section];
     __auto_type heightsInSection = _heightsForCols[section];
-    CGFloat height = heightsInSection.lastObject.doubleValue - _footersLayoutAttributes[@(section)].frame.size.height;
+    CGFloat startY = itemAttributesInSection.firstObject.frame.origin.y;
+    CGFloat height = heightsInSection.lastObject.doubleValue - startY - _footersLayoutAttributes[@(section)].frame.size.height;
     attr.frame = CGRectMake(sectionInsets.left,
-                            itemAttributesInSection.firstObject.frame.origin.y,
+                            startY,
                             collectionView.bounds.size.width - sectionInsets.left - sectionInsets.right,
                             height);
+    attr.zIndex = -1;
     [_decorationLayoutAttribtues addObject:attr];
     [_allLayoutAttributes addObject:attr];
 }
