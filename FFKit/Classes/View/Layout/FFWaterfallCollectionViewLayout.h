@@ -60,11 +60,14 @@ typedef NS_ENUM(NSInteger, FFCollectionViewDecorationType) {
 
 @end
 
+extern const CGFloat FFWaterfallCollectionViewLayoutAutomaticHeight;
+
 @interface FFWaterfallCollectionViewLayout : UICollectionViewLayout
 
 @property (nonatomic, weak) id<FFWaterfallCollectionViewLayoutDelegate> delegate;
 @property (nonatomic, assign) CGFloat minimumLineSpacing;
 @property (nonatomic, assign) CGFloat minimumInteritemSpacing;
+@property (nonatomic, assign) CGFloat estimatedHeight;
 
 @end
 

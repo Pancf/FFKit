@@ -21,9 +21,13 @@
     if (self = [super initWithFrame:frame]) {
         _label = [UILabel new];
         [self.contentView addSubview:_label];
+        _label.numberOfLines = 0;
         _label.translatesAutoresizingMaskIntoConstraints = NO;
-        [_label.centerXAnchor constraintEqualToAnchor:self.contentView.centerXAnchor].active = YES;
-        [_label.centerYAnchor constraintEqualToAnchor:self.contentView.centerYAnchor].active = YES;
+        [_label.leftAnchor constraintEqualToAnchor:self.contentView.leftAnchor constant:10].active = YES;
+        [_label.rightAnchor constraintEqualToAnchor:self.contentView.rightAnchor constant:-10].active = YES;
+        [_label.topAnchor constraintEqualToAnchor:self.contentView.topAnchor constant:20].active = YES;
+        [_label.bottomAnchor constraintEqualToAnchor:self.contentView.bottomAnchor constant:-20].active = YES;
+        [_label.widthAnchor constraintLessThanOrEqualToConstant:200].active = YES;
         self.contentView.backgroundColor = UIColor.redColor;
     }
     return self;
@@ -61,7 +65,8 @@
 
 - (CGFloat)collectionView:(UICollectionView *)collectionView layout:(FFWaterfallCollectionViewLayout *)layout itemHeightAtIndexPath:(NSIndexPath *)indexPath
 {
-    return (indexPath.item % 5) * 10 + 40;
+//    return (indexPath.item % 5) * 10 + 40;
+    return FFWaterfallCollectionViewLayoutAutomaticHeight;
 }
 
 - (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView
@@ -91,7 +96,8 @@
 - (__kindof UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath
 {
     _FFTextContentCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:NSStringFromClass(_FFTextContentCell.class) forIndexPath:indexPath];
-    cell.content = [NSString stringWithFormat:@"%ld-%ld", indexPath.section, indexPath.item];
+    NSArray<NSString *> *arr = @[@"hello", @"asbfsadf", @"qwerrttoslak", @"qpwoworldzxcmsjr"];
+    cell.content = [NSString stringWithFormat:@"%ld-%ld-%@", indexPath.section, indexPath.item,arr[(indexPath.section + indexPath.item) % 4]];
     return cell;
 }
 

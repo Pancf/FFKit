@@ -8,6 +8,7 @@
 #import "FFWaterfallCollectionViewLayout.h"
 
 static NSString * const kFFCollectionViewDecorationViewElementKind = @"kFFCollectionViewDecorationViewElementKind";
+const CGFloat FFWaterfallCollectionViewLayoutAutomaticHeight = CGFLOAT_MAX;
 
 @interface _FFCollectionViewDecorationLayoutAttributes : UICollectionViewLayoutAttributes
 
@@ -83,14 +84,34 @@ static NSString * const kFFCollectionViewDecorationViewElementKind = @"kFFCollec
 @implementation FFCollectionViewDecorationConfig
 @end
 
+@interface _FFWaterfallCollectionViewLayoutAttributes : UICollectionViewLayoutAttributes
+
+@property (nonatomic, assign) NSInteger col;
+
+@end
+
+@implementation _FFWaterfallCollectionViewLayoutAttributes
+
+// UICollectionViewLayoutAttributes instance may be copied
+- (instancetype)copyWithZone:(NSZone *)zone
+{
+    _FFWaterfallCollectionViewLayoutAttributes *obj = [super copyWithZone:zone];
+    obj.col = self.col;
+    return obj;
+}
+
+@end
+
 @implementation FFWaterfallCollectionViewLayout
 {
     NSMutableDictionary<NSNumber *, UICollectionViewLayoutAttributes *> *_headersLayoutAttributes;
-    NSMutableArray<NSMutableArray<UICollectionViewLayoutAttributes *> *> *_itemsLayoutAttributes;
+    NSMutableArray<NSMutableArray<_FFWaterfallCollectionViewLayoutAttributes *> *> *_itemsLayoutAttributes;
     NSMutableDictionary<NSNumber *, UICollectionViewLayoutAttributes *> *_footersLayoutAttributes;
-    NSMutableArray<UICollectionViewLayoutAttributes *> *_allLayoutAttributes;
     NSMutableArray<_FFCollectionViewDecorationLayoutAttributes *> *_decorationLayoutAttribtues;
     NSMutableArray<NSMutableArray<NSNumber *> *> *_heightsForCols;
+    NSMutableDictionary<NSIndexPath *, NSNumber *> *_cachedIndexPathToItemHeight;
+    
+    BOOL _selfsizingCalculated;
 }
 
 - (instancetype)init
@@ -99,11 +120,13 @@ static NSString * const kFFCollectionViewDecorationViewElementKind = @"kFFCollec
         _headersLayoutAttributes = [NSMutableDictionary dictionary];
         _itemsLayoutAttributes = [NSMutableArray array];
         _footersLayoutAttributes = [NSMutableDictionary dictionary];
-        _allLayoutAttributes = [NSMutableArray array];
         _decorationLayoutAttribtues = [NSMutableArray array];
         _heightsForCols = [NSMutableArray array];
+        _cachedIndexPathToItemHeight = [NSMutableDictionary dictionary];
         _minimumLineSpacing = 10;
         _minimumInteritemSpacing = 10;
+        _estimatedHeight = 300;
+        _selfsizingCalculated = NO;
     }
     return self;
 }
@@ -112,7 +135,10 @@ static NSString * const kFFCollectionViewDecorationViewElementKind = @"kFFCollec
 
 - (void)prepareLayout
 {
+    printf("[Callstack]: %s %d\n", __PRETTY_FUNCTION__, _selfsizingCalculated);
     [super prepareLayout];
+    if (_selfsizingCalculated) return;
+    [self _cleanup];
     [self registerClass:_FFCollectionViewDecorationView.class forDecorationViewOfKind:kFFCollectionViewDecorationViewElementKind];
     UICollectionView *collectionView = self.collectionView;
     if (!collectionView) {
@@ -137,30 +163,43 @@ static NSString * const kFFCollectionViewDecorationViewElementKind = @"kFFCollec
 
 - (CGSize)collectionViewContentSize
 {
-    __block CGFloat maxHeight = CGFLOAT_MIN;
-    [_heightsForCols.lastObject enumerateObjectsUsingBlock:^(NSNumber * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-        maxHeight = (maxHeight > obj.doubleValue ? maxHeight : obj.doubleValue);
-    }];
-    CGSize size = CGSizeMake(self.collectionView.bounds.size.width, maxHeight);
+    printf("[Callstack]: %s\n", __PRETTY_FUNCTION__);
+    CGSize size = CGSizeMake(self.collectionView.bounds.size.width, _heightsForCols.lastObject.firstObject.doubleValue);
     return size;
 }
 
 - (NSArray<__kindof UICollectionViewLayoutAttributes *> *)layoutAttributesForElementsInRect:(CGRect)rect
 {
-    NSMutableArray<UICollectionViewLayoutAttributes *> *attrs = [super layoutAttributesForElementsInRect:rect].mutableCopy;
+    printf("[Callstack]: %s\n", __PRETTY_FUNCTION__);
+    __block NSMutableArray<UICollectionViewLayoutAttributes *> *attrs = [super layoutAttributesForElementsInRect:rect].mutableCopy;
     if (!attrs) {
         attrs = [NSMutableArray array];
     }
-    [_allLayoutAttributes enumerateObjectsUsingBlock:^(UICollectionViewLayoutAttributes * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+    __auto_type blk = ^(UICollectionViewLayoutAttributes *obj) {
         if (CGRectIntersectsRect(obj.frame, rect)) {
             [attrs addObject:obj];
         }
+    };
+    [_headersLayoutAttributes enumerateKeysAndObjectsUsingBlock:^(NSNumber * _Nonnull key, UICollectionViewLayoutAttributes * _Nonnull obj, BOOL * _Nonnull stop) {
+        blk(obj);
+    }];
+    [_footersLayoutAttributes enumerateKeysAndObjectsUsingBlock:^(NSNumber * _Nonnull key, UICollectionViewLayoutAttributes * _Nonnull obj, BOOL * _Nonnull stop) {
+        blk(obj);
+    }];
+    [_decorationLayoutAttribtues enumerateObjectsUsingBlock:^(_FFCollectionViewDecorationLayoutAttributes * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        blk(obj);
+    }];
+    [_itemsLayoutAttributes enumerateObjectsUsingBlock:^(NSMutableArray<UICollectionViewLayoutAttributes *> * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        [obj enumerateObjectsUsingBlock:^(UICollectionViewLayoutAttributes * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+            blk(obj);
+        }];
     }];
     return attrs.copy;
 }
 
 - (UICollectionViewLayoutAttributes *)layoutAttributesForItemAtIndexPath:(NSIndexPath *)indexPath
 {
+    printf("[Callstack]: %s\n", __PRETTY_FUNCTION__);
     NSInteger section = indexPath.section;
     if (section >= _itemsLayoutAttributes.count) {
         return nil;
@@ -175,6 +214,7 @@ static NSString * const kFFCollectionViewDecorationViewElementKind = @"kFFCollec
 
 - (UICollectionViewLayoutAttributes *)layoutAttributesForSupplementaryViewOfKind:(NSString *)elementKind atIndexPath:(NSIndexPath *)indexPath
 {
+    printf("[Callstack]: %s\n", __PRETTY_FUNCTION__);
     NSInteger section = indexPath.section;
     if ([elementKind isEqualToString:UICollectionElementKindSectionHeader]) {
         return _headersLayoutAttributes[@(section)];
@@ -188,6 +228,7 @@ static NSString * const kFFCollectionViewDecorationViewElementKind = @"kFFCollec
 
 - (UICollectionViewLayoutAttributes *)layoutAttributesForDecorationViewOfKind:(NSString *)elementKind atIndexPath:(NSIndexPath *)indexPath
 {
+    printf("[Callstack]: %s\n", __PRETTY_FUNCTION__);
     NSInteger section = indexPath.section;
     if (section >= _decorationLayoutAttribtues.count) {
         return nil;
@@ -201,19 +242,89 @@ static NSString * const kFFCollectionViewDecorationViewElementKind = @"kFFCollec
 
 - (BOOL)shouldInvalidateLayoutForBoundsChange:(CGRect)newBounds
 {
+    printf("[Callstack]: %s\n", __PRETTY_FUNCTION__);
     CGRect oldBounds = self.collectionView.bounds;
     return oldBounds.size.width != newBounds.size.width;
 }
 
+- (BOOL)shouldInvalidateLayoutForPreferredLayoutAttributes:(UICollectionViewLayoutAttributes *)preferredAttributes withOriginalAttributes:(UICollectionViewLayoutAttributes *)originalAttributes
+{
+    printf("[Callstack]: %s\n", __PRETTY_FUNCTION__);
+    // Step1,when user scrolls，_updateVisibleCellsNow: will call
+    // [UICollectionReusableView preferredLayoutAttributesFittingAttributes:].
+    // Default implementation will calculate result according to AutoLayout constraints.
+    // Step2, decide whether invalidating layout or not with originalAttributes and preferredAttributes
+    if (originalAttributes.representedElementCategory == UICollectionElementCategoryCell) {
+        CGSize originalSize = originalAttributes.size;
+        CGSize preferredSize = preferredAttributes.size;
+        return ceil(originalSize.height) != ceil(preferredSize.height);
+    }
+    return [super shouldInvalidateLayoutForPreferredLayoutAttributes:preferredAttributes withOriginalAttributes:originalAttributes];
+}
+
 - (void)invalidateLayout
 {
+    printf("[Callstack]: %s\n", __PRETTY_FUNCTION__);
     [super invalidateLayout];
     [self _cleanup];
 }
 
+- (UICollectionViewLayoutInvalidationContext *)invalidationContextForPreferredLayoutAttributes:(UICollectionViewLayoutAttributes *)preferredAttributes withOriginalAttributes:(UICollectionViewLayoutAttributes *)originalAttributes
+{
+    printf("[Callstack]: %s\n", __PRETTY_FUNCTION__);
+    // Step3, If Step2 return true，then construct an instance of UICollectionViewLayoutInvalidationContext
+    __auto_type cxt = [super invalidationContextForPreferredLayoutAttributes:preferredAttributes withOriginalAttributes:originalAttributes];
+    _cachedIndexPathToItemHeight[originalAttributes.indexPath] = @(ceil(preferredAttributes.size.height));
+    [cxt invalidateItemsAtIndexPaths:@[originalAttributes.indexPath]];
+    cxt.contentSizeAdjustment = CGSizeMake(cxt.contentSizeAdjustment.width, preferredAttributes.size.height - originalAttributes.size.height);
+    return cxt;
+}
+
 - (void)invalidateLayoutWithContext:(UICollectionViewLayoutInvalidationContext *)context
 {
+    printf("[Callstack]: %s %ld-%ld\n", __PRETTY_FUNCTION__, context.invalidatedItemIndexPaths.firstObject.section, context.invalidatedItemIndexPaths.firstObject.item);
+    // Step4, use context from step3 to recalculate layout so that avoid full calculation in prepareLayout:
+    // TODO: I haven't find perfect resolution yet.
     [super invalidateLayoutWithContext:context];
+    NSIndexPath *firstIndexPath = context.invalidatedItemIndexPaths.firstObject;
+    if (firstIndexPath.section >= _itemsLayoutAttributes.count ||
+        firstIndexPath.item >= _itemsLayoutAttributes[firstIndexPath.section].count) {
+        return;
+    }
+    CGFloat heightAdjustment = context.contentSizeAdjustment.height;
+    
+   __auto_type layoutAttribute = _itemsLayoutAttributes[firstIndexPath.section][firstIndexPath.item];
+    CGRect frame = layoutAttribute.frame;
+    frame.size.height = _cachedIndexPathToItemHeight[firstIndexPath].doubleValue;
+    layoutAttribute.frame = frame;
+    
+    NSInteger col = layoutAttribute.col;
+    __auto_type layoutAttributesInSection = _itemsLayoutAttributes[firstIndexPath.section];
+    for (NSInteger i = firstIndexPath.item + 1; i < layoutAttributesInSection.count; ++i) {
+        if (layoutAttributesInSection[i].col == col) {
+            CGRect frame = layoutAttributesInSection[i].frame;
+            frame.origin.y += heightAdjustment;
+            layoutAttributesInSection[i].frame = frame;
+        }
+    }
+    
+    __block CGFloat maxHeight = CGFLOAT_MIN;
+    __block NSInteger maxCol = NSNotFound;
+    [_heightsForCols[firstIndexPath.section] enumerateObjectsUsingBlock:^(NSNumber * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        if (obj.doubleValue > maxHeight) {
+            maxHeight = obj.doubleValue;
+            maxCol = idx;
+        }
+    }];
+    _heightsForCols[firstIndexPath.section][col] = @(_heightsForCols[firstIndexPath.section][col].doubleValue + heightAdjustment);
+    
+    if (maxCol == col) {
+        for (NSInteger i = firstIndexPath.section + 1; i < _heightsForCols.count; ++i) {
+            for (NSInteger j = 0; j < _heightsForCols[i].count; ++j) {
+            }
+        }
+    }
+    _selfsizingCalculated = YES;
 }
 
 // MARK: - Private
@@ -223,7 +334,6 @@ static NSString * const kFFCollectionViewDecorationViewElementKind = @"kFFCollec
     [_headersLayoutAttributes removeAllObjects];
     [_footersLayoutAttributes removeAllObjects];
     [_itemsLayoutAttributes removeAllObjects];
-    [_allLayoutAttributes removeAllObjects];
     [_decorationLayoutAttribtues removeAllObjects];
     [_heightsForCols removeAllObjects];
 }
@@ -262,7 +372,6 @@ static NSString * const kFFCollectionViewDecorationViewElementKind = @"kFFCollec
                                     width - headerInsets.left - headerInsets.right,
                                     headerHeight);
             _headersLayoutAttributes[@(section)] = attr;
-            [_allLayoutAttributes addObject:attr];
         }
     }
     
@@ -300,21 +409,24 @@ static NSString * const kFFCollectionViewDecorationViewElementKind = @"kFFCollec
     CGFloat padding = itemWidth + minimumInteritemSpacing;
     
     NSInteger numberOfItems = [collectionView numberOfItemsInSection:section];
-    NSMutableArray<UICollectionViewLayoutAttributes *> *itemAttributes = [NSMutableArray arrayWithCapacity:numberOfItems];
+    NSMutableArray<_FFWaterfallCollectionViewLayoutAttributes *> *itemAttributes = [NSMutableArray arrayWithCapacity:numberOfItems];
     
     __auto_type heightsInSection = _heightsForCols[section];
     for (int i = 0; i < numberOfItems; ++i) {
         NSIndexPath *indexPath = [NSIndexPath indexPathForItem:i inSection:section];
-        UICollectionViewLayoutAttributes *attr = [UICollectionViewLayoutAttributes layoutAttributesForCellWithIndexPath:indexPath];
+        _FFWaterfallCollectionViewLayoutAttributes *attr = [_FFWaterfallCollectionViewLayoutAttributes layoutAttributesForCellWithIndexPath:indexPath];
         NSInteger col = [self _whichColToLayoutItem:indexPath];
         CGFloat itemHeight = [self.delegate collectionView:collectionView layout:self itemHeightAtIndexPath:indexPath];
+        if (itemHeight == FFWaterfallCollectionViewLayoutAutomaticHeight) {
+            itemHeight = _cachedIndexPathToItemHeight[indexPath] ? _cachedIndexPathToItemHeight[indexPath].doubleValue : self.estimatedHeight;
+        }
         attr.frame = CGRectMake(sectionInsets.left + padding * col,
                                 heightsInSection[col].doubleValue,
                                 itemWidth,
                                 itemHeight);
+        attr.col = col;
         heightsInSection[col] = @(CGRectGetMaxY(attr.frame) + minimumLineSpacing);
         [itemAttributes addObject:attr];
-        [_allLayoutAttributes addObject:attr];
     }
     [_itemsLayoutAttributes addObject:itemAttributes];
     
@@ -353,8 +465,7 @@ static NSString * const kFFCollectionViewDecorationViewElementKind = @"kFFCollec
                                     *y,
                                     width - footerInsets.left - footerInsets.right,
                                     footerHeight);
-            _footersLayoutAttributes[@(section)] = attr;;
-            [_allLayoutAttributes addObject:attr];
+            _footersLayoutAttributes[@(section)] = attr;
         }
     }
     
@@ -390,7 +501,6 @@ static NSString * const kFFCollectionViewDecorationViewElementKind = @"kFFCollec
                             height);
     attr.zIndex = -1;
     [_decorationLayoutAttribtues addObject:attr];
-    [_allLayoutAttributes addObject:attr];
 }
 
 @end
